@@ -1,16 +1,22 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useState } from 'react'
 import './App.css'
 
-const words = ["hello","world","keyboard","practice", "typing"];
 
 function App() {
+  const [words, setWords] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [currentInput, setCurrentInput] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0); // in seconds
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+
+    if (startTime === null){
+      setStartTime(Date.now());
+    }
 
     if (value.endsWith(' ')){
       if (value.trim() === words[currentIndex]){
@@ -20,6 +26,75 @@ function App() {
     } else {
       setCurrentInput(value);
     }
+  }
+
+  useEffect(() => {
+    const loadWords = async () => {
+      try {
+        // Simulate an API call with local words (you can replace with real fetch)
+        const response = await fetch('https://random-word-api.herokuapp.com/word?number=20');
+        const data = await response.json();
+        setWords(data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to load words:', error);
+      }
+    };
+
+    loadWords();
+  }, []);
+
+  useEffect(() => {
+    if (startTime === null) return;
+
+    const interval = setInterval(() => {
+      const seconds = Math.floor((Date.now() - startTime) / 1000);
+      setElapsedTime(seconds);
+    }, 1000);
+
+    return () => clearInterval(interval); // cleanup
+  }, [startTime]);
+
+  useEffect(() => {
+    if (currentIndex >= words.length) {
+      setStartTime(null); // stops timer
+    }
+  }, [currentIndex]);
+
+  const wpm = elapsedTime > 0 ? Math.round((currentIndex / elapsedTime) * 60) : 0;
+
+  const handleRestart = async () => {
+    setCurrentInput('');
+    setCurrentIndex(0);
+    setStartTime(null);
+    setElapsedTime(0);
+    setLoading(true);
+
+    /***setLoading(true);
+    fetch('https://random-word-api.herokuapp.com/word?number=20')
+      .then((res) => res.json())
+      .then((data) => {
+        setWords(data);
+        setLoading(false);
+      .catch(error => {
+        console.error('Error fetching:', error);
+        setLoading(false);
+      });
+      });***/
+
+      try {
+        const response = await fetch('https://random-word-api.herokuapp.com/word?number=20');
+        const data = await response.json();
+        setWords(data);
+      } catch (error) {
+        console.error('Failed to load words:', error);
+      } finally {
+        setLoading(false);  // ✅ always runs, even if fetch fails
+      }
+  };
+
+  if (loading) {
+    return <div style={{ padding: 40 }}>Loading words...</div>;
   }
 
   return (
@@ -80,6 +155,11 @@ function App() {
         })}
       </div>
 
+      <div style={{ fontSize: 18, marginBottom: 10 }}>
+        Time: {elapsedTime}s | WPM: {wpm}
+      </div>
+
+
       <input
         value={currentInput}
         onChange={handleInputChange}
@@ -91,6 +171,19 @@ function App() {
         }}
         placeholder="Type here"
       />
+
+      <button
+        onClick={handleRestart}
+        style={{
+          marginTop: 20,
+          padding: '8px 16px',
+          fontSize: 16,
+          cursor: 'pointer',
+        }}
+      >
+        Restart
+      </button>
+
     </div>
   );
 }
