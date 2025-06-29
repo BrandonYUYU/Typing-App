@@ -5,28 +5,100 @@ import './App.css'
 function App() {
   const [words, setWords] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [typedHistory, setTypedHistory] = useState<{word: string; correctness: ('correct' | 'incorrect' | null)[]}[]>([{word: '',correctness:[]}]); // cur and typed use same logic
 
   const [currentInput, setCurrentInput] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const handleKeyDown = (e :KeyboardEvent) => {
+      const key = e.key;
+      const value = (currentInput + key).trim();
+      const expected = words[currentIndex];
+
+      if (startTime === null){
+        setStartTime(Date.now());
+      }
+
+      const correctness = expected.split('').map((char, i) => {
+        if (value[i] === char) return 'correct';
+        if (value[i] == null) return null;
+        return 'incorrect';
+      })
+
+      setTypedHistory(prev => {
+        const updated = [...prev]; // make a copy (immutable)
+        const lastIndex = updated.length - 1;
+
+        updated[lastIndex] = {
+          ...updated[lastIndex],
+          word: value,
+          correctness: correctness
+        };
+
+        return updated;
+      });
+
+      if (key === ' ' && typedHistory[currentIndex].word !== ''){    
+        setCurrentIndex(currentIndex + 1);
+        setCurrentInput('');
+        setTypedHistory(prev => [
+          ...prev,
+          {word: '', correctness:[]}
+        ]);
+      } else setCurrentInput(value);
+
+    }
+
+    window.addEventListener('keydown',handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown',handleKeyDown);
+    }
+  })
+
+  /***const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
+
+    const trimmed = value.trim();
+    const expected = words[currentIndex];
 
     if (startTime === null){
       setStartTime(Date.now());
     }
 
-    if (value.endsWith(' ')){
-      if (value.trim() === words[currentIndex]){
-        setCurrentIndex(currentIndex + 1);
-      }
+    const correctness = expected.split('').map((char, i) => {
+      if (trimmed[i] === char) return 'correct';
+      if (trimmed[i] == null) return null;
+      return 'incorrect';
+    });
+
+    setTypedHistory(prev => {
+      const updated = [...prev]; // make a copy (immutable)
+      const lastIndex = updated.length - 1;
+
+      updated[lastIndex] = {
+        ...updated[lastIndex],
+        word: trimmed,
+        correctness: correctness
+      };
+
+      return updated;
+    });
+
+    if (value.endsWith(' ')){    
+      setCurrentIndex(currentIndex + 1);
       setCurrentInput('');
-    } else {
-      setCurrentInput(value);
-    }
-  }
+      setTypedHistory(prev => [
+        ...prev,
+        {word: '', correctness:[]}
+      ]);
+
+    } else setCurrentInput(value);
+
+  }***/
 
   useEffect(() => {
     const loadWords = async () => {
@@ -69,6 +141,7 @@ function App() {
     setStartTime(null);
     setElapsedTime(0);
     setLoading(true);
+    setTypedHistory([{word:'', correctness:[]}])
 
     /***setLoading(true);
     fetch('https://random-word-api.herokuapp.com/word?number=20')
@@ -98,59 +171,54 @@ function App() {
   }
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif' }}>
+    <div style={{ padding: 40, fontFamily: 'sans-serif'}}>
       <h1>Typing Practice</h1>
 
-      <div style={{ margin: '20px 0', fontSize: 24 }}>
+      <div style={{ margin: '20px 0', fontSize: 24}}>
         {words.map((word, index) => {
-          //show typed word with per-letter feedback
-          if (index === currentIndex){
-            return (
-              <span key={index} style={{ marginRight: 12}}>
-                {word.split('').map((char,i) => {
-                  const typedchar = currentInput[i];
-                  let color = 'black';
 
-                  if (typedchar == null) {
-                    color = 'black'; // not typed yet
-                  } else if (typedchar === char){
-                    color = 'green'; // correct
-                  } else{
-                    color = 'red'; // incorrect
-                  }
-                  
-                  return(
-                    <span key={i} style={{ color }}>
-                      {char}
-                    </span>
-                  );
-                })}
-              </span>
-            )
-          }
-
-          // Already completed word (gray with line-through)
-          if (index < currentIndex) {
+          // Upcoming words
+          if (index > currentIndex) {
             return (
               <span
                 key={index}
                 style={{
                   marginRight: 12,
                   color: 'gray',
-                  textDecoration: 'line-through',
+                  //textDecoration: 'line-through',
+                  display: 'inline-block'
                 }}
               >
                 {word}
               </span>
             );
+          }  
+          
+          //show typed word with per-letter feedback
+          else{
+            const correctness = typedHistory[index].correctness;
+
+            return (
+              <div key={index} style={{ marginRight: 12, display: 'inline-block'}}>
+                {word.split('').map((char,i) => {
+                  let color = 'gray';
+                  const status = correctness[i];
+
+                  if (status == 'correct') color = 'white';
+                  else if (status == null) color = 'gray';
+                  else color = 'red';
+                    
+                  return(
+                    <span key={i} style={{ color }}>
+                      {char}
+                    </span>
+                  );
+                })}
+              </div>
+            )
           }
 
-          // Upcoming words (not started yet)
-          return (
-            <span key={index} style={{ marginRight: 12, color: 'black' }}>
-              {word}
-            </span>
-          );         
+
 
         })}
       </div>
@@ -159,18 +227,6 @@ function App() {
         Time: {elapsedTime}s | WPM: {wpm}
       </div>
 
-
-      <input
-        value={currentInput}
-        onChange={handleInputChange}
-        autoFocus
-        style={{
-          fontSize: 20,
-          padding: '8px 12px',
-          width: '300px',
-        }}
-        placeholder="Type here"
-      />
 
       <button
         onClick={handleRestart}
