@@ -1,1 +1,1 @@
-Github Pages : https://github.com/BrandonYUYU/english-typing-learner
+Github Pages : https://brandonyuyu.github.io/english-typing-learner/
