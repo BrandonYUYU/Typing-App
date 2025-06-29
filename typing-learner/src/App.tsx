@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
 
@@ -12,10 +12,35 @@ function App() {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0); // in seconds
 
+  const wordRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (wordRef.current && containerRef.current){
+      if (wordRef.current.getBoundingClientRect().bottom > containerRef.current.getBoundingClientRect().bottom){
+        wordRef.current.scrollIntoView({ behavior: 'smooth'});
+      }     
+    }
+  },[currentIndex])
+
   useEffect(() => {
     const handleKeyDown = (e :KeyboardEvent) => {
       const key = e.key;
-      const value = (currentInput + key).trim();
+      let value = '';
+      if (key === 'Backspace'){
+        console.log(key);
+        value = (currentInput.slice(0,-1)).trim();
+      } else if (/^[a-zA-Z]$/.test(key)){
+        if (currentInput.length >= words[currentIndex].length){
+          value = currentInput;
+        } else value = (currentInput + key).trim();
+      }
+      else if (key === ' '){
+        value = (currentInput + key).trim();
+      }
+      else {
+        return;
+      }
       const expected = words[currentIndex];
 
       if (startTime === null){
@@ -59,6 +84,7 @@ function App() {
     }
   })
 
+  // with html input -- old version
   /***const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
 
@@ -143,6 +169,7 @@ function App() {
     setLoading(true);
     setTypedHistory([{word:'', correctness:[]}])
 
+    // .then approach
     /***setLoading(true);
     fetch('https://random-word-api.herokuapp.com/word?number=20')
       .then((res) => res.json())
@@ -162,7 +189,7 @@ function App() {
       } catch (error) {
         console.error('Failed to load words:', error);
       } finally {
-        setLoading(false);  // ✅ always runs, even if fetch fails
+        setLoading(false);
       }
   };
 
@@ -171,26 +198,25 @@ function App() {
   }
 
   return (
-    <div style={{ padding: 40, fontFamily: 'sans-serif'}}>
+    <div id='container'>
       <h1>Typing Practice</h1>
 
-      <div style={{ margin: '20px 0', fontSize: 24}}>
+      <div ref={containerRef}>
         {words.map((word, index) => {
 
           // Upcoming words
           if (index > currentIndex) {
             return (
-              <span
+              <div
                 key={index}
                 style={{
                   marginRight: 12,
                   color: 'gray',
-                  //textDecoration: 'line-through',
                   display: 'inline-block'
                 }}
               >
                 {word}
-              </span>
+              </div>
             );
           }  
           
@@ -199,7 +225,7 @@ function App() {
             const correctness = typedHistory[index].correctness;
 
             return (
-              <div key={index} style={{ marginRight: 12, display: 'inline-block'}}>
+              <div ref={wordRef} key={index} style={{ marginRight: 12, display: 'inline-block'}}>
                 {word.split('').map((char,i) => {
                   let color = 'gray';
                   const status = correctness[i];
@@ -223,15 +249,15 @@ function App() {
         })}
       </div>
 
-      <div style={{ fontSize: 18, marginBottom: 10 }}>
+      <span style={{ fontSize: 18, marginBottom: 10, display: 'block'}}>
         Time: {elapsedTime}s | WPM: {wpm}
-      </div>
+      </span>
 
 
       <button
         onClick={handleRestart}
         style={{
-          marginTop: 20,
+          marginTop: 15,
           padding: '8px 16px',
           fontSize: 16,
           cursor: 'pointer',

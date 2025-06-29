@@ -1,11 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&family=Roboto+Mono&display=swap');
+
+:root{
+  --bgColor: black;
+}
+
+html, body {
+  height: 100%; /* most browser render as tall as content by default */
+  background-color: var(--bgColor);
+}
+
 #root {
-  max-width: 1280px;
+  /*max-width: 1280px;*/
   margin: 0 auto;
   padding: 2rem;
   /*text-align: center;*/
 }
 
-.logo {
+#container {
+  padding: 130px;
+}
+
+#container>div{
+  margin: 20px 0;
+  font-size: 24px;
+  font-family: 'Roboto Mono', monospace;
+  line-height: 35px;
+  height: 70px;
+  overflow: hidden;
+}
+
+
+
+/***.logo {
   height: 6em;
   padding: 1.5em;
   will-change: filter;
@@ -39,4 +65,5 @@
 
 .read-the-docs {
   color: #888;
-}
+}***/
+
