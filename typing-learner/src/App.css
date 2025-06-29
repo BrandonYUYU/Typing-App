@@ -29,6 +29,9 @@ html, body {
   overflow: hidden;
 }
 
+svg{
+  margin-right: 10px;
+}
 
 
 /***.logo {
