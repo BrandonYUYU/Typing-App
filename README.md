@@ -1,3 +1,3 @@
-Github Pages : https://brandonyuyu.github.io/english-typing-learner/
+Github Pages : https://brandonyuyu.github.io/Typing-App/
 
 In progress
