@@ -5,7 +5,7 @@ import './App.css'
 function App() {
   const [words, setWords] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [typedHistory, setTypedHistory] = useState<{word: string; correctness: ('correct' | 'incorrect' | null)[]}[]>([{word: '',correctness:[]}]); // cur and typed use same logic
+  const [typedHistory, setTypedHistory] = useState<{word: string; correctness: ('correct' | 'incorrect' | null)[]}[]>([{word: '',correctness:[]}]);
 
   const [currentInput, setCurrentInput] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -15,10 +15,18 @@ function App() {
   const wordRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // change line function
   useEffect(() => {
     if (wordRef.current && containerRef.current){
-      if (wordRef.current.getBoundingClientRect().bottom > containerRef.current.getBoundingClientRect().bottom){
-        wordRef.current.scrollIntoView({ behavior: 'smooth'});
+      if (wordRef.current.getBoundingClientRect().bottom > containerRef.current.getBoundingClientRect().bottom - 35){
+        containerRef.current?.scrollTo({ // ? -> return null instead of throwing an error
+          top: 35,     //wordRef.current.offsetTop - containerRef.current.offsetTop,
+          behavior: 'smooth',
+        });
+
+        //// versions
+        //containerRef.current.scrollTop += 35;
+        //wordRef.current.scrollIntoView({ behavior: 'smooth'});
       }     
     }
   },[currentIndex])
@@ -88,53 +96,11 @@ function App() {
     }
   })
 
-  // with html input -- old version
-  /***const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-
-    const trimmed = value.trim();
-    const expected = words[currentIndex];
-
-    if (startTime === null){
-      setStartTime(Date.now());
-    }
-
-    const correctness = expected.split('').map((char, i) => {
-      if (trimmed[i] === char) return 'correct';
-      if (trimmed[i] == null) return null;
-      return 'incorrect';
-    });
-
-    setTypedHistory(prev => {
-      const updated = [...prev]; // make a copy (immutable)
-      const lastIndex = updated.length - 1;
-
-      updated[lastIndex] = {
-        ...updated[lastIndex],
-        word: trimmed,
-        correctness: correctness
-      };
-
-      return updated;
-    });
-
-    if (value.endsWith(' ')){    
-      setCurrentIndex(currentIndex + 1);
-      setCurrentInput('');
-      setTypedHistory(prev => [
-        ...prev,
-        {word: '', correctness:[]}
-      ]);
-
-    } else setCurrentInput(value);
-
-  }***/
-
+  // load words once
   useEffect(() => {
     const loadWords = async () => {
       try {
-        // Simulate an API call with local words (you can replace with real fetch)
-        const response = await fetch('https://random-word-api.herokuapp.com/word?number=20');
+        const response = await fetch('https://random-word-api.herokuapp.com/word?number=40'); //maybe can use axios
         const data = await response.json();
         setWords(data);
         setLoading(false);
@@ -146,6 +112,8 @@ function App() {
     loadWords();
   }, []);
 
+
+  // calc time
   useEffect(() => {
     if (startTime === null) return;
 
@@ -158,7 +126,7 @@ function App() {
   }, [startTime]);
 
 
-  const wpm = elapsedTime > 0 ? Math.round((currentIndex / elapsedTime) * 60) : 0;
+  const wpm = elapsedTime > 0 ? Math.round((currentIndex / elapsedTime) * 60) : 0; /////->> should be correctwords
 
   const handleRestart = async () => {
     setCurrentInput('');
