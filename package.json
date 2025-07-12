@@ -1,5 +1,5 @@
 {
-  "name": "typing-learner",
+  "name": "typing-app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -30,5 +30,5 @@
 
     "gh-pages": "^6.3.0"
   },
-  "homepage": "https://github.com/BrandonYUYU/english-typing-learner"
+  "homepage": "https://github.com/BrandonYUYU/Typing-App"
 }
